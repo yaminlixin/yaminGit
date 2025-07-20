@@ -1,0 +1,80 @@
+---
+- name: Setup Ubuntu Web Server
+  hosts: webservers
+  become: yes
+  vars:
+    web_user: www-data
+    web_directory: /var/www/html
+    
+  tasks:
+    - name: Update apt package cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+        
+    - name: Install required packages
+      apt:
+        name:
+          - nginx
+          - ufw
+          - curl
+        state: present
+        
+    - name: Start and enable nginx service
+      systemd:
+        name: nginx
+        state: started
+        enabled: yes
+        
+    - name: Configure firewall - allow SSH
+      ufw:
+        rule: allow
+        port: '22'
+        proto: tcp
+        
+    - name: Configure firewall - allow HTTP
+      ufw:
+        rule: allow
+        port: '80'
+        proto: tcp
+        
+    - name: Configure firewall - allow HTTPS
+      ufw:
+        rule: allow
+        port: '443'
+        proto: tcp
+        
+    - name: Enable firewall
+      ufw:
+        state: enabled
+        
+    - name: Create a simple index.html
+      copy:
+        content: |
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <title>Welcome to {{ inventory_hostname }}</title>
+          </head>
+          <body>
+              <h1>Web Server is Running!</h1>
+              <p>Server: {{ inventory_hostname }}</p>
+              <p>Deployed with Ansible</p>
+          </body>
+          </html>
+        dest: "{{ web_directory }}/index.html"
+        owner: "{{ web_user }}"
+        group: "{{ web_user }}"
+        mode: '0644'
+        
+    - name: Test nginx is responding
+      uri:
+        url: http://localhost
+        method: GET
+        status_code: 200
+      register: nginx_test
+      
+    - name: Display success message
+      debug:
+        msg: "Web server setup complete! Nginx is running on {{ inventory_hostname }}"
+      when: nginx_test.status == 200
