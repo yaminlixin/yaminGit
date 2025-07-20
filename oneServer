@@ -1,0 +1,9 @@
+[webservers]
+# Replace with your actual server details
+192.168.1.100 ansible_user=ubuntu ansible_ssh_private_key_file=~/.ssh/your-key.pem
+# or if using password authentication:
+# 192.168.1.100 ansible_user=ubuntu ansible_password=your-password
+
+[webservers:vars]
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
